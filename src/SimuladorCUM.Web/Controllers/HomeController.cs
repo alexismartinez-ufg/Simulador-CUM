@@ -8,18 +8,11 @@ using System.Text.RegularExpressions;
 
 namespace SimuladorCUM.Web.Controllers
 {
-    public class HomeController : Controller
+    public partial class HomeController(IHttpClientFactory httpClientFactory, IConfiguration configuration, IWebHostEnvironment env) : Controller
     {
-        private readonly IHttpClientFactory _httpClientFactory;
-        private readonly IConfiguration _configuration;
-        private readonly IWebHostEnvironment _env;
-
-        public HomeController(IHttpClientFactory httpClientFactory, IConfiguration configuration, IWebHostEnvironment env)
-        {
-            _httpClientFactory = httpClientFactory;
-            _configuration = configuration;
-            _env = env;
-        }
+        private readonly IHttpClientFactory _httpClientFactory = httpClientFactory;
+        private readonly IConfiguration _configuration = configuration;
+        private readonly IWebHostEnvironment _env = env;
 
         public async Task<IActionResult> Index()
         {
@@ -93,7 +86,7 @@ namespace SimuladorCUM.Web.Controllers
                 }
 
                 // Extraer el carnet del mensaje: "Bienvenido/a MB101421"
-                var carnetMatch = Regex.Match(loginResponse.Message ?? "", @"\b[A-Z]{2}\d{6}\b");
+                var carnetMatch = CarnetRegex().Match(loginResponse.Message ?? "");
                 var carnet = carnetMatch.Success ? carnetMatch.Value : string.Empty;
 
                 // Guardar en sesión
@@ -119,5 +112,8 @@ namespace SimuladorCUM.Web.Controllers
             HttpContext.Session.Clear();
             return RedirectToAction("Login");
         }
+
+        [GeneratedRegex(@"\b[A-Z]{2}\d{6}\b")]
+        private static partial Regex CarnetRegex ();
     }
 }
