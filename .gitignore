@@ -482,3 +482,4 @@ $RECYCLE.BIN/
 
 # Vim temporary swap files
 *.swp
+/src/SimuladorCUM.Web/Properties/ServiceDependencies/SimuladorCUM - Web Deploy/profile.arm.json
