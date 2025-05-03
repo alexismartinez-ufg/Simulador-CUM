@@ -1,73 +1,133 @@
 ﻿@model SimuladorCUM.Models.ApiResponse
 
 @{
-    ViewData["Title"] = "Resumen del Plan de Estudios";
-}
+    ViewData["Title"] = "Plan de Estudios";
+    var asignaturas = Model.Estudiante.AsignaturasPensum;
 
-@if (!ViewData.ModelState.IsValid)
-{
-    foreach (var error in ViewData.ModelState.Values.SelectMany(v => v.Errors))
-    {
-        <div class="alert alert-danger alert-dismissible fade show" role="alert">
-            @error.ErrorMessage
-            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-        </div>
-    }
-
-    <script>
-        setTimeout(function () {
-            document.querySelectorAll('.alert').forEach(function (el) {
-                el.classList.remove('show');
-                el.classList.add('fade');
-            });
-        }, 15000); // 15 segundos
-    </script>
+    int totalMaterias = asignaturas.Count;
+    int totalCiclos = asignaturas.Select(a => a.Ciclo).Distinct().Count();
+    int totalAprobadas = asignaturas.Count(a => a.Estado == 1);
+    int totalNoCursadas = asignaturas.Count(a => a.Estado == 0);
+    int totalDesconocidas = asignaturas.Count(a => a.Estado != 0 && a.Estado != 1);
+    double totalUV = asignaturas.Where(a => a.Estado == 1 && a.UV > 0).Sum(a => a.UV);
+    double totalMerito = asignaturas.Where(a => a.Estado == 1 && a.Notafinal.HasValue && a.UV > 0).Sum(a => a.Notafinal.Value * a.UV);
+    double cum = totalUV > 0 ? totalMerito / totalUV : 0;
 }
 
 <div class="container mt-4">
-    <h2 class="mb-4">Hola, @Model.Estudiante.Nombre (@Model.Estudiante.Carnet)</h2>
-    <p><strong>Carrera:</strong> @Model.Estudiante.Carrera</p>
-    <p><strong>Plan:</strong> @Model.Estudiante.Plan</p>
-    <p><strong>Sede:</strong> @Model.Estudiante.Sede</p>
-    <p><strong>Última actualización:</strong> @Model.Estudiante.FechaActualizacion.ToString("dd/MM/yyyy HH:mm")</p>
+    <!-- Fila 1 -->
+    <div class="row mb-4">
+        <div class="col">
+            <h2 class="mb-4">Hola, @Model.Estudiante.Nombre (@Model.Estudiante.Carnet)</h2>
+            <p><strong>Carrera:</strong> @Model.Estudiante.Carrera</p>
+            <p><strong>Plan:</strong> @Model.Estudiante.Plan</p>
+            <p><strong>Sede:</strong> @Model.Estudiante.Sede</p>
+            <p><strong>Última actualización:</strong> @Model.Estudiante.FechaActualizacion.ToString("dd/MM/yyyy HH:mm")</p>
+        </div>
+    </div>
 
-    <h4 class="mt-4">Asignaturas en el Pensum</h4>
-    <table class="table table-bordered table-striped mt-2">
-        <thead class="table-dark">
-            <tr>
-                <th>#</th>
-                <th>Materia</th>
-                <th>Ciclo</th>
-                <th>UV</th>
-                <th>Estado</th>
-                <th>Nota Final</th>
-            </tr>
-        </thead>
-        <tbody>
-            @foreach (var a in Model.Estudiante.AsignaturasPensum)
-            {
-                <tr>
-                    <td>@a.Num</td>
-                    <td>@a.Materia</td>
-                    <td>@a.Ciclo</td>
-                    <td>@a.UV</td>
-                    <td>
-                        @switch (a.Estado)
-                        {
-                            case 1:
-                                <span class="text-success">Aprobada</span>
-                                ; break;
-                            case 0:
-                                <span class="text-danger">No cursada</span>
-                                ; break;
-                            default:
-                                <span>Desconocido</span>
-                                ; break;
-                        }
-                    </td>
-                    <td>@(a.Notafinal?.ToString("0.0") ?? "N/A")</td>
-                </tr>
-            }
-        </tbody>
-    </table>
+    <!-- Fila 2 -->
+    <div class="row">
+        <!-- Columna Izquierda: Buscador + Tabla -->
+        <div class="col-md-8">
+            <h4>Asignaturas en el Pensum</h4>
+
+            <input type="text" id="filtroMateria" class="form-control mb-3" placeholder="Buscar asignatura...">
+
+            <table class="table table-bordered table-striped mt-2" id="tablaAsignaturas">
+                <thead class="table-dark">
+                    <tr>
+                        <th>#</th>
+                        <th>Materia</th>
+                        <th>Ciclo</th>
+                        <th>UV</th>
+                        <th>Estado</th>
+                        <th>Nota Final</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var a in asignaturas)
+                    {
+                        <tr>
+                            <td>@a.Num</td>
+                            <td>@a.Materia</td>
+                            <td>@a.Ciclo</td>
+                            <td>@a.UV</td>
+                            <td>
+                                @switch (a.Estado)
+                                {
+                                    case 1:
+                                        <span class="text-success">Aprobada</span>
+                                        ; break;
+                                    case 0:
+                                        <span class="text-danger">No cursada</span>
+                                        ; break;
+                                    default:
+                                        <span>Desconocido</span>
+                                        ; break;
+                                }
+                            </td>
+                            <td>@(a.Notafinal?.ToString("0.0") ?? "N/A")</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Columna Derecha: Cuadros estadísticos -->
+        <div class="col-md-4" style="margin-top: 75px;">
+            <div class="row g-3">
+                <div class="col-6">
+                    <div class="border rounded p-3 bg-light text-center">
+                        <strong>Materias</strong><br />
+                        @totalMaterias
+                    </div>
+                </div>
+                <div class="col-6">
+                    <div class="border rounded p-3 bg-light text-center">
+                        <strong>Ciclos</strong><br />
+                        @totalCiclos
+                    </div>
+                </div>
+                <div class="col-6">
+                    <div class="border rounded p-3 bg-light text-center">
+                        <strong>Aprobadas</strong><br />
+                        @totalAprobadas
+                    </div>
+                </div>
+                <div class="col-6">
+                    <div class="border rounded p-3 bg-light text-center">
+                        <strong>No cursadas</strong><br />
+                        @totalNoCursadas
+                    </div>
+                </div>
+                <div class="col-6">
+                    <div class="border rounded p-3 bg-light text-center">
+                        <strong>Desconocidas</strong><br />
+                        @totalDesconocidas
+                    </div>
+                </div>
+                <div class="col-6">
+                    <div class="border rounded p-3 bg-light text-center">
+                        <strong>CUM</strong><br />
+                        @cum.ToString("0.00")
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
 </div>
+
+@section Scripts {
+    <script>
+        document.getElementById("filtroMateria").addEventListener("keyup", function () {
+            var input = this.value.toLowerCase();
+            var filas = document.querySelectorAll("#tablaAsignaturas tbody tr");
+
+            filas.forEach(function (fila) {
+                var materia = fila.cells[1].innerText.toLowerCase();
+                fila.style.display = materia.includes(input) ? "" : "none";
+            });
+        });
+    </script>
+}
