@@ -15,8 +15,9 @@
         public string PreReq2 { get; set; }
         public string PreReq3 { get; set; }
         public string PreReq4 { get; set; }
-        public int Estado { get; set; } // Asumo que 1 = aprobado, 0 = no cursado o reprobado
+        public int Estado { get; set; } // Asumo que 1 = aprobado, 0 = no cursado, 3 = en curso y probablemente 2 reprobado
         public double? Notafinal { get; set; } // Nullable porque no siempre hay nota
+        public double? NotaActual { get; set; } // Nullable porque no siempre hay nota
         public string CicloCursado { get; set; }
         public List<string> Camino { get; set; }
     }

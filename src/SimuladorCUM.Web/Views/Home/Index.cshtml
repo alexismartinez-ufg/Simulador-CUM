@@ -8,7 +8,8 @@
     int totalCiclos = asignaturas.Select(a => a.Ciclo).Distinct().Count();
     int totalAprobadas = asignaturas.Count(a => a.Estado == 1);
     int totalNoCursadas = asignaturas.Count(a => a.Estado == 0);
-    int totalDesconocidas = asignaturas.Count(a => a.Estado != 0 && a.Estado != 1);
+    int totalEnCurso = asignaturas.Count(a => a.Estado == 3);
+    int totalDesconocidas = asignaturas.Count(a => a.Estado != 0 && a.Estado != 1 && a.Estado != 3);
     double totalUV = asignaturas.Where(a => a.Estado == 1 && a.UV > 0).Sum(a => a.UV);
     double totalMerito = asignaturas.Where(a => a.Estado == 1 && a.Notafinal.HasValue && a.UV > 0).Sum(a => a.Notafinal.Value * a.UV);
     double cum = totalUV > 0 ? totalMerito / totalUV : 0;
@@ -29,37 +30,37 @@
         <!-- Columna Derecha: Cuadros estadísticos -->
         <div class="col-md-4">
             <div class="row g-3">
-                <div class="col-6">
+                <div class="col-6 col-sm-4 col-md-6">
                     <div class="border rounded p-3 bg-light text-center">
                         <strong>Materias</strong><br />
                         @totalMaterias
                     </div>
                 </div>
-                <div class="col-6">
+                <div class="col-6 col-sm-4 col-md-6">
                     <div class="border rounded p-3 bg-light text-center">
                         <strong>Ciclos</strong><br />
                         @totalCiclos
                     </div>
                 </div>
-                <div class="col-6">
+                <div class="col-6 col-sm-4 col-md-6">
                     <div class="border rounded p-3 bg-light text-center">
                         <strong>Aprobadas</strong><br />
                         @totalAprobadas
                     </div>
                 </div>
-                <div class="col-6">
+                <div class="col-6 col-sm-4 col-md-6">
                     <div class="border rounded p-3 bg-light text-center">
                         <strong>No cursadas</strong><br />
                         @totalNoCursadas
                     </div>
                 </div>
-                <div class="col-6">
+                <div class="col-6 col-sm-4 col-md-6">
                     <div class="border rounded p-3 bg-light text-center">
-                        <strong>Desconocidas</strong><br />
-                        @totalDesconocidas
+                        <strong>En Curso</strong><br />
+                        @totalEnCurso
                     </div>
                 </div>
-                <div class="col-6">
+                <div class="col-6 col-sm-4 col-md-6">
                     <div class="border rounded p-3 bg-light text-center">
                         <strong>CUM</strong><br />
                         <span id="cumActual">@cum.ToString("0.00")</span>
@@ -74,60 +75,81 @@
         <div class="col">
             <h4>Asignaturas en el Pensum</h4>
 
-            <div class="mb-3 d-flex gap-2">
-                <button id="btnSimulacion" class="btn btn-primary">Activar Simulación</button>
-                <button id="btnLimpiar" class="btn btn-danger d-none">Limpiar Simulación</button>
+            <div class="mb-3 d-flex flex-wrap gap-2">
+                <button id="btnSimulacion" class="btn btn-primary w-100 w-md-auto">Activar Simulación</button>
+                <button id="btnLimpiar" class="btn btn-danger w-100 w-md-auto d-none">Limpiar Simulación</button>
             </div>
 
             <input type="text" id="filtroMateria" class="form-control mb-3" placeholder="Buscar asignatura...">
 
-            <table class="table table-bordered table-striped mt-2" id="tablaAsignaturas">
-                <thead class="table-dark">
-                    <tr>
-                        <th>#</th>
-                        <th>Materia</th>
-                        <th>Cursado</th>
-                        <th>Ciclo</th>
-                        <th>UV</th>
-                        <th>Estado</th>
-                        <th>Nota Final</th>
-                        <th class="simulacion-col d-none">Nota Simulada</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @foreach (var a in asignaturas)
-                    {
+            <div class="table-responsive">
+                <table class="table table-bordered table-striped mt-2" id="tablaAsignaturas">
+                    <thead class="table-dark">
                         <tr>
-                            <td>@a.Num</td>
-                            <td>@a.Materia</td>
-                            <td>@a.CicloCursado</td>
-                            <td>@a.Ciclo</td>
-                            <td>@a.UV</td>
-                            <td>
-                                @switch (a.Estado)
-                                {
-                                    case 1:
-                                        <span class="text-success">Aprobada</span>
-                                        ; break;
-                                    case 0:
-                                        <span class="text-danger">No cursada</span>
-                                        ; break;
-                                    default:
-                                        <span>Desconocido</span>
-                                        ; break;
-                                }
-                            </td>
-                            <td>@(a.Notafinal?.ToString("0.0") ?? "N/A")</td>
-                            <td class="simulacion-col d-none">
-                                @if (a.Estado != 1)  // Solo si no está aprobada
-                                {
-                                    <input type="number" class="form-control notaSimulada" data-uv="@a.UV" min="0" max="10" step="0.01" value="0" />
-                                }
-                            </td>
+                            <th>#</th>
+                            <th>Materia</th>
+                            <th>Cursado</th>
+                            <th class="d-none d-sm-table-cell">Ciclo</th>
+                            <th class="d-none d-sm-table-cell">UV</th>
+                            <th>Estado</th>
+                            <th>Nota Final</th>
+                            <th class="simulacion-col d-none">Nota Simulada</th>
                         </tr>
-                    }
-                </tbody>
-            </table>
+                    </thead>
+                    <tbody>
+                        @foreach (var a in asignaturas)
+                        {
+                            <tr>
+                                <td>@a.Num</td>
+                                <td>@a.Materia</td>
+                                <td>@a.CicloCursado</td>
+                                <td class="d-none d-sm-table-cell">@a.Ciclo</td>
+                                <td class="d-none d-sm-table-cell">@a.UV</td>
+                                <td>
+                                    @switch (a.Estado)
+                                    {
+                                        case 1:
+                                            <span class="text-success">Aprobada</span>
+                                            break;
+                                        case 0:
+                                            <span class="text-danger">No cursada</span>
+                                            break;
+                                        case 3:
+                                            <span class="text-primary">En Curso</span>
+                                            break;
+                                        default:
+                                            <span>Desconocido</span>
+                                            break;
+                                    }
+                                </td>
+                                <td>
+                                    @if (a.Notafinal != null)
+                                    {
+                                        @a.Notafinal?.ToString("0.0")
+                                    }
+                                    else if (a.NotaActual != null)
+                                    {
+                                        <span class="text-warning">@a.NotaActual?.ToString("0.0")</span>
+                                    }
+                                    else
+                                    {
+                                        @:N/A
+                                    }
+                                </td>
+                                <td class="simulacion-col d-none">
+                                    @if (a.Estado != 1)  // Solo si no está aprobada
+                                    {
+                                        <input type="number" class="form-control notaSimulada" data-uv="@a.UV" min="0" max="10" step="0.01" value="0" />
+                                    }
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+
+
+            
         </div>
     </div>
 </div>
