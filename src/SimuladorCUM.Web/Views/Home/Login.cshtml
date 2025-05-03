@@ -3,7 +3,28 @@
     ViewData["Title"] = "Iniciar Sesión";
 }
 
-<div style="display: flex; align-items: center; justify-content: center; height: 100vh;">
+<div style="display: flex; align-items: center; justify-content: center; height: 100vh; flex-direction:column">
+
+    @if (!ViewData.ModelState.IsValid)
+    {
+        foreach (var error in ViewData.ModelState.Values.SelectMany(v => v.Errors))
+        {
+            <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                @error.ErrorMessage
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        }
+
+        <script>
+            setTimeout(function () {
+                document.querySelectorAll('.alert').forEach(function (el) {
+                    el.classList.remove('show');
+                    el.classList.add('fade');
+                });
+            }, 15000); // 15 segundos
+        </script>
+    }
+
     <div style="width: 100%; max-width: 400px; background: #f7f7f7; padding: 30px; border-radius: 10px; box-shadow: 0 4px 12px rgba(0,0,0,0.1);">
         <h2 class="text-center mb-4">🎓 SimuCUM - Inicia sesión</h2>
         <form asp-action="Login" method="post">

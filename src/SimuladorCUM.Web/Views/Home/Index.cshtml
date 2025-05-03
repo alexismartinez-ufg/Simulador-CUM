@@ -1,8 +1,73 @@
-﻿@{
-    ViewData["Title"] = "Home Page";
+﻿@model SimuladorCUM.Models.ApiResponse
+
+@{
+    ViewData["Title"] = "Resumen del Plan de Estudios";
 }
 
-<div class="text-center">
-    <h1 class="display-4">Welcome</h1>
-    <p>Learn about <a href="https://learn.microsoft.com/aspnet/core">building Web apps with ASP.NET Core</a>.</p>
+@if (!ViewData.ModelState.IsValid)
+{
+    foreach (var error in ViewData.ModelState.Values.SelectMany(v => v.Errors))
+    {
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            @error.ErrorMessage
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    }
+
+    <script>
+        setTimeout(function () {
+            document.querySelectorAll('.alert').forEach(function (el) {
+                el.classList.remove('show');
+                el.classList.add('fade');
+            });
+        }, 15000); // 15 segundos
+    </script>
+}
+
+<div class="container mt-4">
+    <h2 class="mb-4">Hola, @Model.Estudiante.Nombre (@Model.Estudiante.Carnet)</h2>
+    <p><strong>Carrera:</strong> @Model.Estudiante.Carrera</p>
+    <p><strong>Plan:</strong> @Model.Estudiante.Plan</p>
+    <p><strong>Sede:</strong> @Model.Estudiante.Sede</p>
+    <p><strong>Última actualización:</strong> @Model.Estudiante.FechaActualizacion.ToString("dd/MM/yyyy HH:mm")</p>
+
+    <h4 class="mt-4">Asignaturas en el Pensum</h4>
+    <table class="table table-bordered table-striped mt-2">
+        <thead class="table-dark">
+            <tr>
+                <th>#</th>
+                <th>Materia</th>
+                <th>Ciclo</th>
+                <th>UV</th>
+                <th>Estado</th>
+                <th>Nota Final</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var a in Model.Estudiante.AsignaturasPensum)
+            {
+                <tr>
+                    <td>@a.Num</td>
+                    <td>@a.Materia</td>
+                    <td>@a.Ciclo</td>
+                    <td>@a.UV</td>
+                    <td>
+                        @switch (a.Estado)
+                        {
+                            case 1:
+                                <span class="text-success">Aprobada</span>
+                                ; break;
+                            case 0:
+                                <span class="text-danger">No cursada</span>
+                                ; break;
+                            default:
+                                <span>Desconocido</span>
+                                ; break;
+                        }
+                    </td>
+                    <td>@(a.Notafinal?.ToString("0.0") ?? "N/A")</td>
+                </tr>
+            }
+        </tbody>
+    </table>
 </div>
