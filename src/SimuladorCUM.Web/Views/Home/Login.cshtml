@@ -1,0 +1,29 @@
+﻿@model SimuladorCUM.ViewModels.LoginViewModel
+@{
+    ViewData["Title"] = "Iniciar Sesión";
+}
+
+<div style="display: flex; align-items: center; justify-content: center; height: 100vh;">
+    <div style="width: 100%; max-width: 400px; background: #f7f7f7; padding: 30px; border-radius: 10px; box-shadow: 0 4px 12px rgba(0,0,0,0.1);">
+        <h2 class="text-center mb-4">🎓 SimuCUM - Inicia sesión</h2>
+        <form asp-action="Login" method="post">
+            <div class="form-group mb-3">
+                <label asp-for="Username" class="form-label"></label>
+                <input asp-for="Username" class="form-control" />
+                <span asp-validation-for="Username" class="text-danger"></span>
+            </div>
+            <div class="form-group mb-3">
+                <label asp-for="Password" class="form-label"></label>
+                <input asp-for="Password" class="form-control" />
+                <span asp-validation-for="Password" class="text-danger"></span>
+            </div>
+            <button type="submit" class="btn btn-primary w-100">Iniciar sesión</button>
+        </form>
+    </div>
+</div>
+
+@section Scripts {
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
+}

@@ -9,7 +9,13 @@ namespace SimuladorCUM.Web
             // Add services to the container.
             builder.Services.AddControllersWithViews();
 
+            builder.Services.AddHttpClient(); // Para HttpClientFactory
+            builder.Services.AddSession();    // Para usar sesión
+
             var app = builder.Build();
+
+            app.UseSession(); // Antes de UseRouting()
+
 
             // Configure the HTTP request pipeline.
             if (!app.Environment.IsDevelopment())
