@@ -6,7 +6,12 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <UserSecretsId>2c9b7917-b4e5-4ce9-970e-bd94eb512078</UserSecretsId>
     <DockerDefaultTargetOS>Linux</DockerDefaultTargetOS>
+    <ApplicationIcon>graduation-hat.ico</ApplicationIcon>
   </PropertyGroup>
+
+  <ItemGroup>
+    <Content Include="graduation-hat.ico" />
+  </ItemGroup>
 
   <ItemGroup>
     <PackageReference Include="Microsoft.VisualStudio.Azure.Containers.Tools.Targets" Version="1.21.0" />

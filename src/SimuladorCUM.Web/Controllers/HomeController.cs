@@ -16,29 +16,41 @@ namespace SimuladorCUM.Web.Controllers
 
         public async Task<IActionResult> Index()
         {
-            var token = HttpContext.Session.GetString("access_token");
-            var carnet = HttpContext.Session.GetString("carnet");
-
-            if (string.IsNullOrEmpty(token) || string.IsNullOrEmpty(carnet))
+            try
             {
+                var token = HttpContext.Session.GetString("access_token");
+                var carnet = HttpContext.Session.GetString("carnet");
+
+                if (string.IsNullOrEmpty(token) || string.IsNullOrEmpty(carnet))
+                {
+                    return RedirectToAction("Login");
+                }
+
+                var client = _httpClientFactory.CreateClient();
+                client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+
+                var response = await client.GetAsync($"{_configuration["UniversityApi:PlanEstudioUrl"]}/{carnet}");
+
+                if (!response.IsSuccessStatusCode)
+                {
+                    ModelState.AddModelError("", "Error al obtener los datos del plan de estudios.");
+                    return View();
+                }
+
+                var json = await response.Content.ReadAsStringAsync();
+                var apiResponse = JsonConvert.DeserializeObject<ApiResponse>(json);
+
+                return View(apiResponse);
+            }
+            catch (Exception ex )
+            {
+                var showDetail = _env.IsDevelopment() || _configuration.GetValue<bool>("AppSettings:ShowDetailedErrors");
+
+                string message = showDetail ? ex.Message.ToString() : "Ocurrió un error inesperado. Intente nuevamente más tarde.";
+                ModelState.AddModelError("", message); 
+
                 return RedirectToAction("Login");
             }
-
-            var client = _httpClientFactory.CreateClient();
-            client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
-
-            var response = await client.GetAsync($"{_configuration["UniversityApi:PlanEstudioUrl"]}/{carnet}");
-
-            if (!response.IsSuccessStatusCode)
-            {
-                ModelState.AddModelError("", "Error al obtener los datos del plan de estudios.");
-                return View();
-            }
-
-            var json = await response.Content.ReadAsStringAsync();
-            var apiResponse = JsonConvert.DeserializeObject<ApiResponse>(json);
-
-            return View(apiResponse);
         }
 
 
@@ -101,7 +113,7 @@ namespace SimuladorCUM.Web.Controllers
             {
                 var showDetail = _env.IsDevelopment() || _configuration.GetValue<bool>("AppSettings:ShowDetailedErrors");
 
-                string message = showDetail ? ex.ToString() : "Ocurrió un error inesperado. Intente nuevamente más tarde.";
+                string message = showDetail ? ex.Message.ToString() : "Ocurrió un error inesperado. Intente nuevamente más tarde.";
                 ModelState.AddModelError("", message);
                 return View(model);
             }
