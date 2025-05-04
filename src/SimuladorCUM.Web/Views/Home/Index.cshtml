@@ -1,0 +1,247 @@
+﻿@model SimuladorCUM.Models.ApiResponse
+
+@{
+    ViewData["Title"] = "Plan de Estudios";
+    var asignaturas = Model.Estudiante.AsignaturasPensum;
+
+    int totalMaterias = asignaturas.Count;
+    int totalCiclos = asignaturas.Select(a => a.Ciclo).Distinct().Count();
+    int totalAprobadas = asignaturas.Count(a => a.Estado == 1);
+    int totalNoCursadas = asignaturas.Count(a => a.Estado == 0);
+    int totalEnCurso = asignaturas.Count(a => a.Estado == 3);
+    int totalDesconocidas = asignaturas.Count(a => a.Estado != 0 && a.Estado != 1 && a.Estado != 3);
+    double totalUV = asignaturas.Where(a => a.Estado == 1 && a.UV > 0).Sum(a => a.UV);
+    double totalMerito = asignaturas.Where(a => a.Estado == 1 && a.Notafinal.HasValue && a.UV > 0).Sum(a => a.Notafinal.Value * a.UV);
+    double cum = totalUV > 0 ? totalMerito / totalUV : 0;
+}
+
+<div class="container mt-4">
+    <!-- Fila 1 -->
+    <div class="row mb-4">
+        <!-- Columna Izquierda: Detalle Estudiante -->
+        <div class="col-md-8">
+            <h2 class="mb-4">Hola, @Model.Estudiante.Nombre (@Model.Estudiante.Carnet)</h2>
+            <p><strong>Carrera:</strong> @Model.Estudiante.Carrera</p>
+            <p><strong>Modalidad:</strong> @Model.Estudiante.Modalidad</p>
+            <p><strong>Plan:</strong> @Model.Estudiante.Plan</p>
+            <p><strong>Sede:</strong> @Model.Estudiante.Sede</p>
+            <p><strong>Última actualización:</strong> @Model.Estudiante.FechaActualizacion.ToString("dd/MM/yyyy HH:mm")</p>
+        </div>
+
+        <!-- Columna Derecha: Cuadros estadísticos -->
+        <div class="col-md-4">
+            <div class="row g-3">
+                <div class="col-6 col-sm-4 col-md-6">
+                    <div class="border rounded p-3 bg-light text-center">
+                        <strong>Materias</strong><br />
+                        @totalMaterias
+                    </div>
+                </div>
+                <div class="col-6 col-sm-4 col-md-6">
+                    <div class="border rounded p-3 bg-light text-center">
+                        <strong>Ciclos</strong><br />
+                        @totalCiclos
+                    </div>
+                </div>
+                <div class="col-6 col-sm-4 col-md-6">
+                    <div class="border rounded p-3 bg-light text-center">
+                        <strong>Aprobadas</strong><br />
+                        @totalAprobadas
+                    </div>
+                </div>
+                <div class="col-6 col-sm-4 col-md-6">
+                    <div class="border rounded p-3 bg-light text-center">
+                        <strong>No cursadas</strong><br />
+                        @totalNoCursadas
+                    </div>
+                </div>
+                <div class="col-6 col-sm-4 col-md-6">
+                    <div class="border rounded p-3 bg-light text-center">
+                        <strong>En Curso</strong><br />
+                        @totalEnCurso
+                    </div>
+                </div>
+                <div class="col-6 col-sm-4 col-md-6">
+                    <div class="border rounded p-3 bg-light text-center">
+                        <strong>CUM</strong><br />
+                        <span id="cumActual">@cum.ToString("0.00")</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Fila 2: Tabla de Notas y Simulación-->
+    <div class="row">
+        <div class="col">
+            <h4>Asignaturas en el Pensum</h4>
+
+            <div class="mb-3 d-flex flex-wrap gap-2">
+                <button id="btnSimulacion" class="btn btn-primary w-100 w-md-auto">Activar Simulación</button>
+                <button id="btnLimpiar" class="btn btn-danger w-100 w-md-auto d-none">Limpiar Simulación</button>
+            </div>
+
+            <input type="text" id="filtroMateria" class="form-control mb-3" placeholder="Buscar asignatura...">
+
+            <div class="table-responsive">
+                <table class="table table-bordered table-striped mt-2" id="tablaAsignaturas">
+                    <thead class="table-dark">
+                        <tr>
+                            <th>#</th>
+                            <th>Materia</th>
+                            <th class="d-none d-sm-table-cell">Cursado</th>
+                            <th class="d-none d-sm-table-cell">Ciclo</th>
+                            <th class="d-none d-sm-table-cell">UV</th>
+                            <th>Estado</th>
+                            <th>Nota Final</th>
+                            <th class="simulacion-col d-none">Nota Simulada</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var a in asignaturas)
+                        {
+                            <tr>
+                                <td>@a.Num</td>
+                                <td>@a.Materia</td>
+                                <td class="d-none d-sm-table-cell">@a.CicloCursado</td>
+                                <td class="d-none d-sm-table-cell">@a.Ciclo</td>
+                                <td class="d-none d-sm-table-cell">@a.UV</td>
+                                <td>
+                                    @switch (a.Estado)
+                                    {
+                                        case 1:
+                                            <span class="text-success">Aprobada</span>
+                                            break;
+                                        case 0:
+                                            <span class="text-danger">No cursada</span>
+                                            break;
+                                        case 3:
+                                            <span class="text-primary">En Curso</span>
+                                            break;
+                                        default:
+                                            <span>Desconocido</span>
+                                            break;
+                                    }
+                                </td>
+                                <td>
+                                    @if (a.Notafinal != null)
+                                    {
+                                        @a.Notafinal?.ToString("0.0")
+                                    }
+                                    else if (a.NotaActual != null)
+                                    {
+                                        <span class="text-warning">@a.NotaActual?.ToString("0.0")</span>
+                                    }
+                                    else
+                                    {
+                                        @:N/A
+                                    }
+                                </td>
+                                <td class="simulacion-col d-none">
+                                    @if (a.Estado != 1)  // Solo si no está aprobada
+                                    {
+                                        <input type="number" class="form-control notaSimulada" data-uv="@a.UV" min="0" max="10" step="0.01" value="0" />
+                                    }
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        document.getElementById("filtroMateria").addEventListener("keyup", function () {
+            var input = this.value.toLowerCase();
+            var filas = document.querySelectorAll("#tablaAsignaturas tbody tr");
+
+            filas.forEach(function (fila) {
+                var materia = fila.cells[1].innerText.toLowerCase();
+                fila.style.display = materia.includes(input) ? "" : "none";
+            });
+        });
+    </script>
+
+    <script>
+        let simulacionActiva = false;
+
+        document.getElementById("btnSimulacion").addEventListener("click", function () {
+            simulacionActiva = !simulacionActiva;
+
+            // Mostrar/ocultar columna de simulación
+            document.querySelectorAll(".simulacion-col").forEach(col => {
+                col.classList.toggle("d-none", !simulacionActiva);
+            });
+
+            // Mostrar/ocultar botón limpiar
+            document.getElementById("btnLimpiar").classList.toggle("d-none", !simulacionActiva);
+
+            // Cambiar texto del botón
+            this.innerText = simulacionActiva ? "Desactivar Simulación" : "Activar Simulación";
+
+            // Recalcular CUM
+            calcularCumSimulado();
+        });
+
+        // Calcular CUM simulado en base a inputs
+        function calcularCumSimulado() {
+            if (!simulacionActiva) {
+                document.getElementById("cumActual").innerText = "@cum.ToString("0.00")";
+                return;
+            }
+
+            let totalMerito = 0;
+            let totalUV = 0;
+
+            // Notas aprobadas
+        @foreach (var a in asignaturas.Where(a => a.Estado == 1 && a.Notafinal.HasValue && a.UV > 0))
+        {
+            <text>
+                    totalMerito += @(a.Notafinal.Value * a.UV);
+                    totalUV += @a.UV;
+            </text>
+        }
+
+            // Notas simuladas
+            document.querySelectorAll(".notaSimulada").forEach(input => {
+                let nota = parseFloat(input.value) || 0;
+                let uv = parseFloat(input.getAttribute("data-uv")) || 0;
+
+                if (nota > 0 && uv > 0) {
+                    totalMerito += nota * uv;
+                    totalUV += uv;
+                }
+            });
+
+            let cum = totalUV > 0 ? totalMerito / totalUV : 0;
+            document.getElementById("cumActual").innerText = cum.toFixed(2);
+        }
+
+        // Recalcular al escribir
+        document.addEventListener("input", function (e) {
+            if (e.target.classList.contains("notaSimulada")) {
+                calcularCumSimulado();
+            }
+        });
+
+        // Limpiar simulaciones
+        document.getElementById("btnLimpiar").addEventListener("click", function () {
+            document.querySelectorAll(".notaSimulada").forEach(input => input.value = 0);
+            calcularCumSimulado();
+        });
+
+        // Buscador por materia
+        document.getElementById("filtroMateria").addEventListener("keyup", function () {
+            var input = this.value.toLowerCase();
+            var filas = document.querySelectorAll("#tablaAsignaturas tbody tr");
+
+            filas.forEach(function (fila) {
+                var materia = fila.cells[1].innerText.toLowerCase();
+                fila.style.display = materia.includes(input) ? "" : "none";
+            });
+        });
+    </script>
+}
